@@ -62,7 +62,7 @@ public class Attacker1 {
 */
         System.out.println(suffix);
 
-        return null;
+        return suffix.getBytes();
     }
     
     /**
@@ -77,17 +77,17 @@ public class Attacker1 {
      */
     private String solveBlock(String builderText, String plaintext, String suffix, int round) {
         System.out.println(round + ": " + suffix);
-        if (round == 15) {
+        if (round == 16) {
             return suffix;
         }
         HashMap<byte[], Character> combinations;
         builderText = builderText.substring(0, builderText.length() - round) + suffix;
         plaintext = plaintext.substring(0, plaintext.length() - 1);
         combinations = makeAllCombinations(builderText);
-        if(appendCharToSuffix(suffix, combinations, plaintext).equals(null)) {
-            return suffix;
-        } else {
+        try {
             suffix = appendCharToSuffix(suffix, combinations, plaintext);
+        } catch(Exception e) {
+            return suffix;
         }
         
         return solveBlock(builderText, plaintext, suffix, ++round);
@@ -105,17 +105,15 @@ public class Attacker1 {
         return combinations;
     }
 
-    private String appendCharToSuffix(String suffix, HashMap<byte[], Character> combinations, String plaintext) {
+    private String appendCharToSuffix(String suffix, HashMap<byte[], Character> combinations, String plaintext) throws Exception {
         for (byte[] compose : combinations.keySet()) {
-            String mapString = new String(compose);
-            String oracleString = new String(oracle.compose(plaintext));
-            
-            if (mapString.substring(0, 15).equals(oracleString.substring(0, 15))) {
+            byte[] composeSection = Arrays.copyOfRange(compose, 0, 16);
+            byte[] oracleSection = Arrays.copyOfRange(oracle.compose(plaintext), 0, 16);
+            if (Arrays.equals(composeSection, oracleSection)) {
                 return suffix + combinations.get(compose);
             }
         }
-        
-        return null;
+        throw new Exception();
     }
 
     /// --- end of implementation area
