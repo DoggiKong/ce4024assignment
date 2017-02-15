@@ -31,88 +31,85 @@ public class Attacker1 {
         // input block size = 64 bits = each block contains 16 hexadecimals
         // ECB mode
         String suffix = new String();
-        String builderText = "AAAAAAAAAAAAAAA";
-        String plaintext = "AAAAAAAAAAAAAAAA";
-        int round = 0;
-        suffix = solveBlock(builderText, plaintext, suffix, 0);
-        /*
-        // Find first letter
-        plaintext = "AAAAAAAAAAAAAAA";
-        HashMap<byte[], Character> combinations = makeAllCombinations(plaintext);
-        plaintext = "AAAAAAAAAAAAAAA";
-        suffix = appendCharToSuffix(suffix, combinations, plaintext);
-
-        // Second Letter
-        plaintext = "AAAAAAAAAAAAAAa";
-        combinations = makeAllCombinations(plaintext);
-        plaintext = "AAAAAAAAAAAAAA";
-        suffix = appendCharToSuffix(suffix, combinations, plaintext);
-
-        // Third Letter
-        plaintext = "AAAAAAAAAAAAAa1";
-        combinations = makeAllCombinations(plaintext);
-        plaintext = "AAAAAAAAAAAAA";
-        suffix = appendCharToSuffix(suffix, combinations, plaintext);
+        int block = 0;
+        String builderText = makeBuilderText(block);
+        String plaintext = makePlaintext(block);
         
-        // Fourth Letter
-        plaintext = "AAAAAAAAAAAAa19";
-        combinations = makeAllCombinations(plaintext);
-        plaintext = "AAAAAAAAAAAA";
-        suffix = appendCharToSuffix(suffix, combinations, plaintext);
-*/
+        suffix = solveBlock(builderText, plaintext, suffix, 0, block);
+
         System.out.println(suffix);
 
         return suffix.getBytes();
     }
+
+    private String makeBuilderText(int block) {
+        return new String(new char[(block * 16 + 16 - 1)]).replace("\0", "A");
+    }
+    
+    private String makePlaintext(int block) {
+        return new String(new char[(block * 16 + 16)]).replace("\0", "A");
+    }
+    
     
     /**
      * Each Block has 16 letters
-     * 
+     *
      * Padding is 0
-     * 
+     *
      * @param builderText the text to build all the combinations
      * @param plaintext the text to be appended into encryption
      * @param suffix the secret we are looking for
      * @return suffix the secret we are looking for
      */
-    private String solveBlock(String builderText, String plaintext, String suffix, int round) {
+    private String solveBlock(String builderText, String plaintext, String suffix, int round, int block) {
         System.out.println(round + ": " + suffix);
-        if (round == 16) {
+        if (round == (16 * block + 16)) {
+            block++;
+            builderText = makeBuilderText(block);
+            plaintext = makePlaintext(block);
+            suffix = solveBlock(builderText, plaintext, suffix, 0, block);
             return suffix;
         }
         HashMap<byte[], Character> combinations;
-        builderText = builderText.substring(0, builderText.length() - round) + suffix;
+        builderText = builderText.substring(0, builderText.length() - round) + suffix.substring(0, round);
         plaintext = plaintext.substring(0, plaintext.length() - 1);
-        combinations = makeAllCombinations(builderText);
+        combinations = makeAllCombinations(builderText, block);
         try {
-            suffix = appendCharToSuffix(suffix, combinations, plaintext);
-        } catch(Exception e) {
+            if (16 * block + 15 - round < 16) {
+                suffix = appendCharToSuffix(suffix, combinations, plaintext, block);
+            }
+        } catch (Exception e) {
             return suffix;
         }
-        
-        return solveBlock(builderText, plaintext, suffix, ++round);
+
+        return solveBlock(builderText, plaintext, suffix, ++round, block);
     }
 
-    private HashMap<byte[], Character> makeAllCombinations(String plaintext) {
+    private HashMap<byte[], Character> makeAllCombinations(String plaintext, int block) {
         HashMap<byte[], Character> combinations = new HashMap<byte[], Character>();
         for (int i = 0; i < 256; i++) {
-            if (plaintext.length() == 16) {
+            if (plaintext.length() == (block * 16 + 16)) {
                 plaintext = plaintext.substring(0, plaintext.length() - 1);
             }
             plaintext = plaintext + (char) (i);
+            //System.out.println(plaintext);
             combinations.put(oracle.compose(plaintext), (char) (i));
         }
         return combinations;
     }
 
-    private String appendCharToSuffix(String suffix, HashMap<byte[], Character> combinations, String plaintext) throws Exception {
+    private String appendCharToSuffix(String suffix, HashMap<byte[], Character> combinations, String plaintext, int block) throws Exception {
         for (byte[] compose : combinations.keySet()) {
-            byte[] composeSection = Arrays.copyOfRange(compose, 0, 16);
-            byte[] oracleSection = Arrays.copyOfRange(oracle.compose(plaintext), 0, 16);
+            byte[] composeSection = Arrays.copyOfRange(compose, block * 16, block * 16 + 16);
+            byte[] oracleSection = Arrays.copyOfRange(oracle.compose(plaintext), block * 16, block * 16 + 16);
             if (Arrays.equals(composeSection, oracleSection)) {
+                if (combinations.get(compose) == 0) {
+                    throw new Exception();
+                }
                 return suffix + combinations.get(compose);
             }
         }
+        //System.out.println("NOT FOUND: " + plaintext);
         throw new Exception();
     }
 
@@ -128,7 +125,7 @@ public class Attacker1 {
     public static void main(String[] args) {
         ///////////////////////////////////////////////////////////
         String key = "3%ac^`+=";  // a different key
-        String suffix = "a19q-j*"; // a different suffix
+        String suffix = "aasdfasdfasdfsdfdfdfdfdfdfdfdfdfsadfsdfafd"; // a different suffix
         ///////////////////////////////////////////////////////////
         Oracle1 oracle = new Oracle1(key.getBytes(), suffix.getBytes());
         Attacker1 attacker = new Attacker1(oracle);
