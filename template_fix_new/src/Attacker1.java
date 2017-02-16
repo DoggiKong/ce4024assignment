@@ -34,9 +34,37 @@ public class Attacker1 {
         int block = 0;
         String builderText = makeBuilderText(block);
         String plaintext = makePlaintext(block);
-        
-        suffix = solveBlock(builderText, plaintext, suffix, 0, block);
 
+        int round = 0;
+
+        while (true) {
+            System.out.println(round + ": " + suffix);
+            if (round == (16 * block + 16)) {
+                block++;
+                builderText = makeBuilderText(block);
+                plaintext = makePlaintext(block);
+                round = 0;
+                //suffix = solveBlock(builderText, plaintext, suffix, 0, block);
+                //return suffix;
+                continue;
+            }
+            HashMap<byte[], Character> combinations;
+            builderText = builderText.substring(0, builderText.length() - round) + suffix.substring(0, round);
+            plaintext = plaintext.substring(0, plaintext.length() - 1);
+            combinations = makeAllCombinations(builderText, block);
+            try {
+                if (16 * block + 15 - round < 16) {
+                    suffix = appendCharToSuffix(suffix, combinations, plaintext, block);
+                }
+            } catch (Exception e) {
+                break;
+                //return suffix;
+            }
+            round++;
+            //return solveBlock(builderText, plaintext, suffix, ++round, block);
+        }
+
+        //suffix = solveBlock(builderText, plaintext, suffix, 0, block);
         System.out.println(suffix);
 
         return suffix.getBytes();
@@ -45,12 +73,11 @@ public class Attacker1 {
     private String makeBuilderText(int block) {
         return new String(new char[(block * 16 + 16 - 1)]).replace("\0", "A");
     }
-    
+
     private String makePlaintext(int block) {
         return new String(new char[(block * 16 + 16)]).replace("\0", "A");
     }
-    
-    
+
     /**
      * Each Block has 16 letters
      *
@@ -125,7 +152,7 @@ public class Attacker1 {
     public static void main(String[] args) {
         ///////////////////////////////////////////////////////////
         String key = "3%ac^`+=";  // a different key
-        String suffix = "aasdfasdfasdfsdfdfdfdfdfdfdfdfdfsadfsdfafd"; // a different suffix
+        String suffix = "a19q-j*"; // a different suffix
         ///////////////////////////////////////////////////////////
         Oracle1 oracle = new Oracle1(key.getBytes(), suffix.getBytes());
         Attacker1 attacker = new Attacker1(oracle);
