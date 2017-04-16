@@ -26,26 +26,17 @@ public class Attacker1 {
     /// --- start of implementation area
     public byte[] decryptSuffix() {
         // TODO implement decryption code here
-
-        // key = 56 bits (8th bit is normally ignored) Hence should have 64bit - 8
-        // input block size = 64 bits = each block contains 16 hexadecimals
-        // ECB mode
         String suffix = new String();
         int block = 0;
-        String builderText = makeBuilderText((block * 16 + 16 - 1));
-        String plaintext = makePlaintext((block * 16 + 16));
-
+        String builderText = makeText((block * 16 + 16 - 1));
+        String plaintext = makeText((block * 16 + 16));
         int round = 0;
-
         while (true) {
-            //System.out.println(round + ": " + suffix);
             if (round == (16 * block + 16)) {
                 block++;
-                builderText = makeBuilderText((block * 16 + 16 - 1));
-                plaintext = makePlaintext((block * 16 + 16));
+                builderText = makeText((block * 16 + 16 - 1));
+                plaintext = makeText((block * 16 + 16));
                 round = 0;
-                //suffix = solveBlock(builderText, plaintext, suffix, 0, block);
-                //return suffix;
                 continue;
             }
             HashMap<byte[], Character> combinations;
@@ -57,63 +48,19 @@ public class Attacker1 {
                     suffix = appendCharToSuffix(suffix, combinations, plaintext, block);
                 } else {
                     round = 16 * block- 1;
-                    builderText = makeBuilderText(16) + suffix.substring(0, suffix.length() - 1);
-                    plaintext = makePlaintext(16);
+                    builderText = makeText(16) + suffix.substring(0, suffix.length() - 1);
+                    plaintext = makeText(16);
                 }
             } catch (Exception e) {
                 break;
-                //return suffix;
             }
             round++;
-            //return solveBlock(builderText, plaintext, suffix, ++round, block);
         }
-
-        //suffix = solveBlock(builderText, plaintext, suffix, 0, block);
-        System.out.println(suffix);
-
         return suffix.getBytes();
     }
 
-    private String makeBuilderText(int n) {
+    private String makeText(int n) {
         return new String(new char[n]).replace("\0", "A");
-    }
-
-    private String makePlaintext(int n) {
-        return new String(new char[n]).replace("\0", "A");
-    }
-
-    /**
-     * Each Block has 16 letters (Recursive - Getting StackOverflowError)
-     *
-     * Padding is 0
-     *
-     * @param builderText the text to build all the combinations
-     * @param plaintext the text to be appended into encryption
-     * @param suffix the secret we are looking for
-     * @return suffix the secret we are looking for
-     */
-    private String solveBlock(String builderText, String plaintext, String suffix, int round, int block) {
-        System.out.println(round + ": " + suffix);
-        if (round == (16 * block + 16)) {
-            block++;
-            builderText = makeBuilderText(block);
-            plaintext = makePlaintext(block);
-            suffix = solveBlock(builderText, plaintext, suffix, 0, block);
-            return suffix;
-        }
-        HashMap<byte[], Character> combinations;
-        builderText = builderText.substring(0, builderText.length() - round) + suffix.substring(0, round);
-        plaintext = plaintext.substring(0, plaintext.length() - 1);
-        combinations = makeAllCombinations(builderText, block);
-        try {
-            if (16 * block + 15 - round < 16) {
-                suffix = appendCharToSuffix(suffix, combinations, plaintext, block);
-            }
-        } catch (Exception e) {
-            return suffix;
-        }
-
-        return solveBlock(builderText, plaintext, suffix, ++round, block);
     }
 
     private HashMap<byte[], Character> makeAllCombinations(String plaintext, int block) {
@@ -123,7 +70,6 @@ public class Attacker1 {
                 plaintext = plaintext.substring(0, plaintext.length() - 1);
             }
             plaintext = plaintext + (char) (i);
-            //System.out.println(plaintext);
             combinations.put(oracle.compose(plaintext), (char) (i));
         }
         return combinations;
@@ -140,7 +86,6 @@ public class Attacker1 {
                 return suffix + combinations.get(compose);
             }
         }
-        //System.out.println("NOT FOUND: " + plaintext);
         throw new Exception();
     }
 

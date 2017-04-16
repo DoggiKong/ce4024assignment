@@ -19,7 +19,6 @@ public class Attacker2 {
     // however they won't be exposed to the unit tests
     // you are not allowed to add any fields
     /// --- start of implementation area    
-    
     // Give block size 
     private static String ALGO = Config.DES;
     private static int BlockSize = getAlgoBlockSize(ALGO);
@@ -31,7 +30,8 @@ public class Attacker2 {
         byte[] mac0Pad1 = oracle.mac0(1);
         byte[] mac0Pad2 = oracle.mac0(2);
         byte[] combMac = safeXor(mac0Pad1, mac0Pad2);
-        for (int i = 0; i * BlockSize < input.length; i++) {
+        int i = 0;
+        while (BlockSize * i < input.length) {
             byte[] block = Arrays.copyOfRange(input, i * BlockSize, (i + 1) * BlockSize);
             block = safeXor(block, combMac);
             block = safeXor(block, previousMac);
@@ -41,6 +41,7 @@ public class Attacker2 {
             mac3Blocks = safeXor(mac3Blocks, mac0Pad2);
             previousMac = mac3Blocks;
             mac = safeXor(mac, mac3Blocks);
+            i++;
         }
         return mac;
     }
